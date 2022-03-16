@@ -3,6 +3,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import java.awt.BorderLayout;
@@ -10,6 +11,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.util.ArrayList;
+import java.util.stream.Collector;
 import java.awt.Font;
 
 public class SignInApp { 
@@ -88,7 +90,10 @@ public class SignInApp {
         addUser.setFont(new Font("Helvetica", Font.BOLD, 18));
         addUser.setBackground(Color.WHITE);
         addUser.addActionListener(e -> {
-            
+            String name = JOptionPane.showInputDialog(null, "Enter new member name");
+            if(name != null || name == "") {
+                users.add(new User(name));
+            } 
         });
 
         JButton removeUser = new JButton("Remove User");
@@ -96,7 +101,10 @@ public class SignInApp {
         removeUser.setFont(new Font("Helvetica", Font.BOLD, 18));
         removeUser.setBackground(Color.WHITE);
         removeUser.addActionListener(e -> {
-            
+            String name = JOptionPane.showInputDialog(null, "Enter member name");
+            if(name != null || name != "") {
+                users.remove(users.parallelStream().filter(o -> o.getName().equals(name)).findFirst().get());
+            } 
         });
 
         bottomPanel.add(addUser);
@@ -110,6 +118,9 @@ public class SignInApp {
             temp[i] = users.get(i).getName();
         }
         return temp;
+    }
+
+    private void writeToCSV() {
     }
 
     public static void main(String[] args) {
