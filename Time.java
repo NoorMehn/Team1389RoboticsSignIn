@@ -1,16 +1,14 @@
 public class Time implements java.io.Serializable {
     
-    private final String date;
     private int signInTime;
     private int signOutTime;
     private int elapsedTime;
 
-    public Time(String date, int signInTime) {
-        this(date, signInTime, 0);
+    public Time(int signInTime) {
+        this(signInTime, 0);
     }
 
-    public Time(String date, int signInTime, int signOutTime) {
-        this.date = date;
+    public Time(int signInTime, int signOutTime) {
         this.signInTime = signInTime;
         this.signOutTime = signOutTime;
     }
@@ -21,10 +19,6 @@ public class Time implements java.io.Serializable {
 
     public void setSignOutTime(int signOutTime) {
         this.signOutTime = signOutTime;
-    }
-
-    public String getDate() {
-        return date;
     }
 
     public int getSignInTime() {

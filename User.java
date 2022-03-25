@@ -6,9 +6,9 @@ public class User implements java.io.Serializable {
         this.name = name;
     }
 
-    public void signIn(String date, int time) {
+    public void signIn(int time) {
         if(today == null) {
-            today = new Time(date, time);
+            today = new Time(time);
         }
     }
 
@@ -19,24 +19,16 @@ public class User implements java.io.Serializable {
         }
     }
 
-    public void resetTime() {
-        today = null;
-    }
-
     public String getName() {
         return name;
     }
 
-    public void setName(String newName) {
-        this.name = newName;
-    }
-
-    public String getTodayDate() {
-        return today.getDate();
-    }
-
-    public String getTimes() {
-        return today.getDate() + "," + today.getSignInTime() + "," + today.getSignOutTime() + "," + today.getElapsedTime();
+    /**
+     * Outputs the CSV format of each time variable
+     * @return String name,sign-in time,sign-out time,elapsed time
+     */
+    public String getCSV() {
+        return name + "," + today.getSignInTime() + "," + today.getSignOutTime() + "," + today.getElapsedTime();
     }
 
     @Override

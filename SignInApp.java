@@ -12,23 +12,21 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
-import java.lang.ClassNotFoundException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.text.SimpleDateFormat;
 import java.awt.Font;
+import java.lang.ClassNotFoundException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
+import java.io.FileWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.File;
+import java.io.FileNotFoundException;
 
-/**
- * Serialize everything everytime?
- * Serialize everything as a temp-save, then after each day save everything to csv then delete serialize stuff?
- */
 
 public class SignInApp { 
 
@@ -94,7 +92,7 @@ public class SignInApp {
         signIn.addActionListener(e -> {
             if(namesComboBox.getSelectedItem() != null) {
                 User user = (User) namesComboBox.getSelectedItem();
-                user.signIn(getDate(), getCurrentTime());
+                user.signIn(getCurrentTime());
                 JOptionPane.showMessageDialog(app, "Hello, " + user.getName());
             }
         });
@@ -215,7 +213,25 @@ public class SignInApp {
         }
     }
 
-    private void writeToCSV() {}
+    private void writeToCSV() {
+        try {
+            File file = new File("sign-in.csv");
+            boolean createdNew = file.createNewFile();
+            FileWriter fileWriter = new FileWriter(file, true);
+
+            if(createdNew) {
+                fileWriter.append("date,name,sign-in,sign-out,elapsed\n");
+            }
+
+            for(User user : appUsers.users) {
+                fileWriter.write(getDate() + "," + user.getCSV() + "\n");
+            }
+
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void main(String[] args) {
         new SignInApp();
