@@ -1,4 +1,4 @@
-public class User {
+public class User implements java.io.Serializable {
     private Time today;
     private String name;
 
@@ -29,6 +29,14 @@ public class User {
 
     public void setName(String newName) {
         this.name = newName;
+    }
+
+    public String getTodayDate() {
+        return today.getDate();
+    }
+
+    public String getTimes() {
+        return today.getDate() + "," + today.getSignInTime() + "," + today.getSignOutTime() + "," + today.getElapsedTime();
     }
 
     @Override

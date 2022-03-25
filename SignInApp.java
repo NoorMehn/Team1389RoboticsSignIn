@@ -10,13 +10,20 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.lang.ClassNotFoundException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.awt.Font;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * Serialize everything everytime?
@@ -25,29 +32,36 @@ import java.util.stream.Stream;
 
 public class SignInApp { 
 
-    private ArrayList<User> users;
-    private JFrame app;
+    private AppUsers appUsers;
+    private final JFrame app;
     private JPanel topPanel;
     private JPanel bodyPanel;
     private JPanel bottomPanel;
 
     public SignInApp() {
-        users = new ArrayList<User>();
+        deserialize();
         app = new JFrame();
-        app.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // Serialize data and close
+        app.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                serialize();
+                e.getWindow().dispose();
+            }
+        });
         app.setTitle("Sign-In Sheet");
         app.setBounds(100, 100, 400, 400);
         app.setLayout(new BorderLayout());
         app.setResizable(false);
 
-        createElements();
+        createHeader();
+        createBody();
         app.add(topPanel, BorderLayout.NORTH);
         app.add(bodyPanel, BorderLayout.CENTER);
         app.add(bottomPanel, BorderLayout.SOUTH);
         app.setVisible(true);
     }
 
-    private void createElements() {
+    private void createHeader() {
         // Create header -> Sign-in text
         topPanel = new JPanel();
         topPanel.setBorder(BorderFactory.createEmptyBorder(15, 25, 5, 25));
@@ -56,17 +70,22 @@ public class SignInApp {
         JLabel title = new JLabel("Sign-in Sheet", SwingConstants.CENTER);
         title.setFont(new Font("Helvetica", Font.BOLD, 24));
         topPanel.add(title);
+    }
 
+    private void createBody() {
         // Create body -> everything else
         bodyPanel = new JPanel();
         bodyPanel.setBorder(BorderFactory.createEmptyBorder(5, 30, 5, 31));
         bodyPanel.setLayout(new GridLayout(5, 1, 0, 5));
         bodyPanel.setBackground(Color.WHITE);
 
-        JComboBox<User> namesComboBox = new JComboBox<User>();
+        JComboBox<User> namesComboBox = new JComboBox<>();
         namesComboBox.setPreferredSize(new Dimension(210, 20));
         namesComboBox.setBackground(Color.WHITE);
         namesComboBox.setFont(new Font("Helvetica", Font.BOLD, 12));
+        for(User u : appUsers.users) {
+            namesComboBox.addItem(u);
+        }
 
         JButton signIn = new JButton("Sign  In  ");
         signIn.setPreferredSize(new Dimension(210, 20));
@@ -76,6 +95,7 @@ public class SignInApp {
             if(namesComboBox.getSelectedItem() != null) {
                 User user = (User) namesComboBox.getSelectedItem();
                 user.signIn(getDate(), getCurrentTime());
+                JOptionPane.showMessageDialog(app, "Hello, " + user.getName());
             }
         });
 
@@ -87,7 +107,8 @@ public class SignInApp {
             if(namesComboBox.getSelectedItem() != null) {
                 User user = (User) namesComboBox.getSelectedItem();
                 user.signOut(getCurrentTime());
-            }            
+                JOptionPane.showMessageDialog(app, "Goodbye, " + user.getName());
+            }
         });
 
         bodyPanel.add(namesComboBox);
@@ -106,8 +127,8 @@ public class SignInApp {
         addUser.addActionListener(e -> {
             String name = JOptionPane.showInputDialog(app, "Enter new member name");
             if(name != null && !name.equals("")) {
-                users.add(new User(name));
-                namesComboBox.addItem(users.get(users.size()-1));
+                appUsers.users.add(new User(name));
+                namesComboBox.addItem(appUsers.users.get(appUsers.users.size()-1));
                 namesComboBox.revalidate();
                 JOptionPane.showMessageDialog(app, name + " added");
             } 
@@ -120,9 +141,9 @@ public class SignInApp {
         removeUser.addActionListener(e -> {
             String name = JOptionPane.showInputDialog(app, "Enter member name");
             if(name != null && !name.equals("")) {
-                Optional<User> temp = users.parallelStream().filter(o -> o.getName().equals(name)).findFirst();
+                Optional<User> temp = appUsers.users.parallelStream().filter(o -> o.getName().equals(name)).findFirst();
                 if(temp.isPresent()) {
-                    users.remove(temp.get());
+                    appUsers.users.remove(temp.get());
                     namesComboBox.removeItem(temp.get());
                     namesComboBox.revalidate();
                     JOptionPane.showMessageDialog(app, name + " removed");
@@ -142,19 +163,59 @@ public class SignInApp {
 
     private int getCurrentTime(){
         Date currentDate = new Date();
-        SimpleDateFormat hour = new SimpleDateFormat("kk");
-        int hourInt = Integer.parseInt(hour.format(currentDate));
-        SimpleDateFormat minute = new SimpleDateFormat("mm");
-        int minuteInt = Integer.parseInt(minute.format(currentDate));
+        int hourInt = Integer.parseInt(new SimpleDateFormat("kk").format(currentDate));
+        int minuteInt = Integer.parseInt(new SimpleDateFormat("mm").format(currentDate));
         return ((hourInt * 60) + minuteInt);
     }
 
-    private void serialize() {}
+    private void serialize() {
+        /*
+          Serialize users ArrayList
+         */
+        try {
+            FileOutputStream file = new FileOutputStream(".sign-in-app-data.ser");
+            ObjectOutputStream out = new ObjectOutputStream(file);
 
-    private void deserialize() {}
-
-    private void writeToCSV() {
+            out.writeObject(appUsers);
+            out.close();
+            file.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+
+    private void deserialize() {
+        /*
+          If today's date is different from the serialized data's date
+          then 1. export csv 2. reset all time objects
+          If not, populate users array with serialized data.
+         */
+        try {
+            FileInputStream file = new FileInputStream(".sign-in-app-data.ser");
+            ObjectInputStream in = new ObjectInputStream(file);
+
+            appUsers = (AppUsers) in.readObject();
+            in.close();
+            file.close();
+        } catch (FileNotFoundException | ClassNotFoundException e) {
+            appUsers = null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        processData();
+    }
+
+    private void processData() {
+        // Make sure objects are from same day.
+        if(appUsers == null) {
+            appUsers = new AppUsers(getDate());
+        } else if(appUsers.users.size() != 0 && !appUsers.date.equals(getDate())) {
+            writeToCSV();
+            appUsers = new AppUsers(getDate());
+        }
+    }
+
+    private void writeToCSV() {}
 
     public static void main(String[] args) {
         new SignInApp();

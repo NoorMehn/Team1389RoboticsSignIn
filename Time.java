@@ -1,13 +1,9 @@
-public class Time {
+public class Time implements java.io.Serializable {
     
-    private String date;
+    private final String date;
     private int signInTime;
     private int signOutTime;
     private int elapsedTime;
-
-    public Time() {
-        this(null, 0, 0);
-    }
 
     public Time(String date, int signInTime) {
         this(date, signInTime, 0);
